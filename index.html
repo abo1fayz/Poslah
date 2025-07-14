@@ -234,6 +234,25 @@
     cursor: pointer;
     font-weight: 700;
   }
+
+  /* تنبيه كيفية وضع الهاتف */
+  #positionTip {
+    position: fixed;
+    bottom: 110px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1976d2cc;
+    color: white;
+    padding: 8px 14px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    box-shadow: 0 3px 12px rgba(25,118,210,0.8);
+    max-width: 280px;
+    text-align: center;
+    user-select: none;
+    z-index: 2100;
+  }
 </style>
 </head>
 <body>
@@ -270,6 +289,10 @@
   </svg>
 </div>
 
+<div id="positionTip" aria-live="polite" role="alert">
+  👐 ضع هاتفك مستقيماً أمامك مع مستوى أفقي لتحصل على أفضل قراءة للسهم
+</div>
+
 <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
 
 <script>
@@ -282,6 +305,7 @@
   const closeBtn = modal.querySelector('.close-btn');
   const directionNote = document.getElementById('directionNote');
   const dismissNoteBtn = document.getElementById('dismissNote');
+  const positionTip = document.getElementById('positionTip');
 
   let map, userMarker, qiblaMarker;
   let currentQiblaAngle = 0;
@@ -416,6 +440,11 @@
   dismissNoteBtn.addEventListener('click', () => {
     directionNote.style.display = 'none';
   });
+
+  // إخفاء تنبيه وضع الهاتف تلقائياً بعد 12 ثانية
+  setTimeout(() => {
+    positionTip.style.display = 'none';
+  }, 12000);
 
   agreeBtn.addEventListener('click', () => {
     modal.style.display = 'none';
