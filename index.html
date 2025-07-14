@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>اتجاه القبلة على الخريطة</title>
-  <!-- تم إزالة integrity و crossorigin -->
   <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
@@ -34,7 +33,6 @@
   <div id="info">جاري تحديد موقعك...</div>
   <div id="map"></div>
 
-  <!-- تم إزالة integrity و crossorigin -->
   <script
     src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
   ></script>
@@ -69,21 +67,23 @@
       // حساب زاوية القبلة
       const qiblaAngle = calculateQibla(lat, lon);
 
-      // سهم القبلة كرمز مخصص
+      // سهم القبلة كرمز مخصص أكبر وأكثر وضوحًا
       const arrowIcon = L.divIcon({
         html: `<div style="
           transform: rotate(${qiblaAngle}deg);
-          width: 40px; height: 40px;
-          margin-left: -20px;
-          margin-top: -20px;
+          width: 60px; height: 60px;
+          margin-left: -30px;
+          margin-top: -30px;
+          filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.3));
           ">
-          <svg viewBox="0 0 24 24" fill="#e74c3c" stroke="#c0392b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" >
-            <path d="M12 2 L19 21 H5 L12 2 Z" />
+          <svg viewBox="0 0 24 24" fill="#d32f2f" stroke="#b71c1c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" >
+            <path d="M12 2 L21 22 H3 L12 2 Z" />
+            <line x1="12" y1="7" x2="12" y2="16" stroke="#fff" stroke-width="2" />
           </svg>
           </div>`,
         className: '',
-        iconSize: [40, 40],
-        iconAnchor: [20, 20],
+        iconSize: [60, 60],
+        iconAnchor: [30, 30],
       });
 
       // إضافة سهم القبلة فوق موقع المستخدم
