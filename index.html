@@ -3,27 +3,34 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>اتجاه القبلة</title>
+  <title>القرآن حياة | اتجاه القبلة</title>
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(to bottom, #fefcea, #f1da36);
+      margin: 0;
+      padding: 30px 20px;
       text-align: center;
-      background: #f0f0f0;
-      padding: 30px;
+      color: #222;
     }
+
     h2 {
-      color: #333;
+      font-size: 28px;
+      margin-bottom: 20px;
+      color: #0d3b66;
     }
+
     .compass {
-      width: 250px;
-      height: 250px;
-      margin: 20px auto;
-      border: 5px solid #aaa;
+      width: 260px;
+      height: 260px;
+      margin: auto;
+      border: 8px solid #fff;
       border-radius: 50%;
+      background: #ffffff;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
       position: relative;
-      background: radial-gradient(circle, #fff, #eee);
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
+
     #arrow {
       width: 100%;
       height: 100%;
@@ -32,30 +39,51 @@
       left: 0;
       transform-origin: 50% 50%;
       transition: transform 0.5s ease;
+      pointer-events: none;
     }
+
     #startBtn {
-      padding: 10px 20px;
-      margin-top: 20px;
+      margin-top: 25px;
+      padding: 12px 25px;
       font-size: 16px;
-      background: #3e8e41;
-      color: white;
+      background-color: #0d3b66;
+      color: #fff;
       border: none;
-      border-radius: 8px;
+      border-radius: 10px;
       cursor: pointer;
+      transition: background-color 0.3s ease;
     }
+
+    #startBtn:hover {
+      background-color: #0a2d4d;
+    }
+
     .note {
-      margin-top: 15px;
-      color: #555;
+      margin-top: 20px;
+      font-size: 14px;
+      color: #333;
+    }
+
+    .footer {
+      margin-top: 40px;
+      font-size: 13px;
+      color: #777;
     }
   </style>
 </head>
 <body>
-  <h2>اتجاه القبلة</h2>
+  <h2>🔁 تحديد اتجاه القبلة</h2>
+
   <div class="compass">
-    <img id="arrow" src="https://i.imgur.com/HEyTf6V.png" alt="سهم القبلة" />
+    <img id="arrow" src="https://cdn-icons-png.flaticon.com/512/545/545682.png" alt="سهم القبلة" />
   </div>
+
   <button id="startBtn">ابدأ تحديد الاتجاه</button>
-  <p class="note">يرجى الضغط على الزر ومنح الأذونات عند الطلب</p>
+  <p class="note">يرجى الضغط على الزر ومنح الأذونات عند الطلب.</p>
+
+  <div class="footer">
+    ⓘ القرآن حياة | تصميم: محمد مسلم الصالح
+  </div>
 
   <script>
     let qiblaAngle = 0;
@@ -97,7 +125,7 @@
             })
             .catch(console.error);
         } else {
-          // Android or desktop
+          // Android أو المتصفحات العادية
           window.addEventListener("deviceorientation", handleOrientation, true);
         }
       }, (err) => {
