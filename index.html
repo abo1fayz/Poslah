@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>اتجاه القبلة</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      text-align: center;
+      background: #f0f0f0;
+      padding: 30px;
+    }
+    h2 {
+      color: #333;
+    }
+    .compass {
+      width: 250px;
+      height: 250px;
+      margin: 20px auto;
+      border: 5px solid #aaa;
+      border-radius: 50%;
+      position: relative;
+      background: radial-gradient(circle, #fff, #eee);
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    #arrow {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      transform-origin: 50% 50%;
+      transition: transform 0.5s ease;
+    }
+    #startBtn {
+      padding: 10px 20px;
+      margin-top: 20px;
+      font-size: 16px;
+      background: #3e8e41;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .note {
+      margin-top: 15px;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <h2>اتجاه القبلة</h2>
+  <div class="compass">
+    <img id="arrow" src="https://i.imgur.com/HEyTf6V.png" alt="سهم القبلة" />
+  </div>
+  <button id="startBtn">ابدأ تحديد الاتجاه</button>
+  <p class="note">يرجى الضغط على الزر ومنح الأذونات عند الطلب</p>
+
+  <script>
+    let qiblaAngle = 0;
+
+    function calculateQibla(lat, lon) {
+      const kaabaLat = 21.4225;
+      const kaabaLon = 39.8262;
+
+      const rad = Math.PI / 180;
+      const dLon = (kaabaLon - lon) * rad;
+
+      const y = Math.sin(dLon) * Math.cos(kaabaLat * rad);
+      const x = Math.cos(lat * rad) * Math.sin(kaabaLat * rad) -
+                Math.sin(lat * rad) * Math.cos(kaabaLat * rad) * Math.cos(dLon);
+
+      let brng = Math.atan2(y, x);
+      brng = brng * (180 / Math.PI);
+      return (brng + 360) % 360;
+    }
+
+    function startCompass() {
+      navigator.geolocation.getCurrentPosition((pos) => {
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+        qiblaAngle = calculateQibla(lat, lon);
+
+        // iOS permission
+        if (
+          typeof DeviceOrientationEvent !== "undefined" &&
+          typeof DeviceOrientationEvent.requestPermission === "function"
+        ) {
+          DeviceOrientationEvent.requestPermission()
+            .then((response) => {
+              if (response === "granted") {
+                window.addEventListener("deviceorientation", handleOrientation, true);
+              } else {
+                alert("تم رفض الإذن باستخدام البوصلة.");
+              }
+            })
+            .catch(console.error);
+        } else {
+          // Android or desktop
+          window.addEventListener("deviceorientation", handleOrientation, true);
+        }
+      }, (err) => {
+        alert("فشل تحديد الموقع: " + err.message);
+      });
+    }
+
+    function handleOrientation(event) {
+      if (event.alpha === null) {
+        alert("جهازك لا يدعم البوصلة أو تم رفض الإذن.");
+        return;
+      }
+      const deviceAlpha = event.alpha;
+      const rotation = qiblaAngle - deviceAlpha;
+      document.getElementById("arrow").style.transform = `rotate(${rotation}deg)`;
+    }
+
+    document.getElementById("startBtn").addEventListener("click", startCompass);
+  </script>
+</body>
+</html>
