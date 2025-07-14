@@ -110,23 +110,23 @@
         const lon = pos.coords.longitude;
         qiblaAngle = calculateQibla(lat, lon);
 
-        // iOS
-        if (
-          typeof DeviceOrientationEvent !== "undefined" &&
-          typeof DeviceOrientationEvent.requestPermission === "function"
-        ) {
-          DeviceOrientationEvent.requestPermission()
-            .then((response) => {
-              if (response === "granted") {
-                window.addEventListener("deviceorientation", handleOrientation, true);
-              } else {
-                alert("تم رفض الإذن باستخدام البوصلة.");
-              }
-            })
-            .catch(console.error);
-        } else {
-          // Android أو متصفحات أخرى
+        if (typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function") {
+          // iOS
+          DeviceOrientationEvent.requestPermission().then(permissionState => {
+            if (permissionState === "granted") {
+              window.addEventListener("deviceorientation", handleOrientation, true);
+            } else {
+              alert("تم رفض إذن البوصلة.");
+            }
+          }).catch(console.error);
+        } else if ("ondeviceorientationabsolute" in window) {
+          // Chrome (Android)
+          window.addEventListener("deviceorientationabsolute", handleOrientation, true);
+        } else if ("ondeviceorientation" in window) {
+          // متصفحات أخرى
           window.addEventListener("deviceorientation", handleOrientation, true);
+        } else {
+          alert("جهازك لا يدعم مستشعر الاتجاه.");
         }
       }, (err) => {
         alert("فشل تحديد الموقع: " + err.message);
@@ -136,11 +136,9 @@
     function handleOrientation(event) {
       let heading;
 
-      // Safari (iOS)
       if (event.webkitCompassHeading !== undefined) {
         heading = event.webkitCompassHeading;
       } else if (event.alpha !== null) {
-        // Android
         heading = 360 - event.alpha;
       } else {
         alert("لا يمكن قراءة اتجاه الجهاز.");
