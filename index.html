@@ -110,7 +110,7 @@
         const lon = pos.coords.longitude;
         qiblaAngle = calculateQibla(lat, lon);
 
-        // iOS permission
+        // iOS
         if (
           typeof DeviceOrientationEvent !== "undefined" &&
           typeof DeviceOrientationEvent.requestPermission === "function"
@@ -125,7 +125,7 @@
             })
             .catch(console.error);
         } else {
-          // Android أو المتصفحات العادية
+          // Android أو متصفحات أخرى
           window.addEventListener("deviceorientation", handleOrientation, true);
         }
       }, (err) => {
@@ -134,12 +134,20 @@
     }
 
     function handleOrientation(event) {
-      if (event.alpha === null) {
-        alert("جهازك لا يدعم البوصلة أو تم رفض الإذن.");
+      let heading;
+
+      // Safari (iOS)
+      if (event.webkitCompassHeading !== undefined) {
+        heading = event.webkitCompassHeading;
+      } else if (event.alpha !== null) {
+        // Android
+        heading = 360 - event.alpha;
+      } else {
+        alert("لا يمكن قراءة اتجاه الجهاز.");
         return;
       }
-      const deviceAlpha = event.alpha;
-      const rotation = qiblaAngle - deviceAlpha;
+
+      const rotation = qiblaAngle - heading;
       document.getElementById("arrow").style.transform = `rotate(${rotation}deg)`;
     }
 
