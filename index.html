@@ -1,708 +1,139 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<title>اتجاه القبلة | القرآن حياة</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-
-<style>
-  :root {
-    --primary-color: #0d47a1;
-    --secondary-color: #1976d2;
-    --accent-color: #b71c1c;
-    --light-color: #f5f5f5;
-    --dark-color: #222;
-    --shadow: 0 4px 12px rgba(0,0,0,0.15);
-  }
-
-  body, html {
-    margin: 0; padding: 0; height: 100%;
-    font-family: 'Cairo', Arial, sans-serif;
-    background: linear-gradient(135deg, #f0f4f8, #d9e2ec);
-    color: var(--dark-color);
-    position: relative;
-  }
-
-  #app {
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    padding-bottom: 100px;
-    filter: none;
-    transition: filter 0.3s ease;
-  }
-  #app.dimmed {
-    filter: brightness(0.6);
-    user-select: none;
-    pointer-events: none;
-  }
-
-  header {
-    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
-    padding: 18px 24px;
-    color: white;
-    font-size: 1.3rem;
-    font-weight: 700;
-    text-align: center;
-    box-shadow: var(--shadow);
-    user-select: none;
-    position: relative;
-    z-index: 1001;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 10px;
-  }
-
-  #info {
-    background: #ffffffdd;
-    padding: 14px 18px;
-    margin: 10px auto 16px;
-    width: min(500px, 90%);
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    color: var(--primary-color);
-    font-weight: 600;
-    text-align: center;
-    user-select: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-  }
-
-  #map {
-    flex-grow: 1;
-    border-radius: 12px;
-    margin: 0 auto 20px;
-    width: min(700px, 95%);
-    box-shadow:
-      0 8px 20px rgba(25, 118, 210, 0.2),
-      inset 0 0 10px rgba(255,255,255,0.4);
-    border: 2px solid white;
-  }
-
-  .leaflet-popup-content-wrapper {
-    font-family: 'Cairo', Arial, sans-serif;
-    font-weight: 600;
-    font-size: 1rem;
-    color: var(--primary-color);
-    border-radius: 10px;
-  }
-  .leaflet-popup-content {
-    margin: 0;
-    text-align: center;
-  }
-
-  #controls {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 15px;
-  }
-
-  #refreshBtn {
-    cursor: pointer;
-    background: var(--secondary-color);
-    border: none;
-    color: white;
-    font-weight: 700;
-    padding: 12px 24px;
-    border-radius: 30px;
-    box-shadow: var(--shadow);
-    transition: all 0.3s ease;
-    margin: 0 auto;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 1rem;
-    user-select: none;
-  }
-  #refreshBtn:hover {
-    background: var(--primary-color);
-    transform: translateY(-2px);
-  }
-  #refreshBtn:disabled {
-    background: #cccccc;
-    cursor: not-allowed;
-    transform: none;
-  }
-
-  #helpBtn {
-    cursor: pointer;
-    background: transparent;
-    border: none;
-    color: var(--primary-color);
-    font-weight: 600;
-    padding: 8px 16px;
-    border-radius: 20px;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.9rem;
-  }
-  #helpBtn:hover {
-    background: rgba(0,0,0,0.05);
-  }
-
-  .qibla-arrow {
-    filter: drop-shadow(3px 3px 4px rgba(0,0,0,0.25));
-  }
-
-  #bottom-arrow {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%) rotate(0deg);
-    width: 80px;
-    height: 80px;
-    background: var(--accent-color);
-    border-radius: 50%;
-    box-shadow: 0 4px 15px rgba(183, 28, 28, 0.6);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: default;
-    user-select: none;
-    transition: transform 0.5s ease;
-    z-index: 2000;
-  }
-
-  #bottom-arrow svg {
-    width: 50px;
-    height: 50px;
-    fill: white;
-    stroke: #7f0000;
-    stroke-width: 3;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
-
-  #compass {
-    position: absolute;
-    top: 15px;
-    left: 15px;
-    background: white;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    z-index: 1000;
-    pointer-events: none;
-  }
-
-  @media (max-width: 500px) {
-    header {
-      font-size: 1.1rem;
-      padding: 15px 18px;
-    }
-    #info {
-      width: 90%;
-      font-size: 0.9rem;
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>اتجاه القبلة | القرآن حياة</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: 'Cairo', sans-serif;
+      direction: rtl;
+      background: #f9f9f9;
     }
     #map {
-      width: 90%;
-      margin-bottom: 15px;
+      height: 100vh;
+      width: 100%;
     }
-    #bottom-arrow {
-      width: 70px;
-      height: 70px;
-      bottom: 15px;
+    #distance {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      background: white;
+      padding: 10px 15px;
+      border-radius: 10px;
+      font-weight: bold;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      z-index: 1000;
     }
-    #bottom-arrow svg {
-      width: 40px;
-      height: 40px;
+    .compass {
+      position: absolute;
+      bottom: 90px;
+      left: 10px;
+      width: 100px;
+      height: 100px;
+      background: rgba(255,255,255,0.9);
+      border-radius: 50%;
+      border: 2px solid #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 12px;
+      color: #333;
+      z-index: 1000;
     }
-    #refreshBtn {
-      padding: 10px 20px;
-      font-size: 0.9rem;
+    .compass::before {
+      content: '';
+      position: absolute;
+      width: 2px;
+      height: 50%;
+      background: red;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
     }
-  }
-
-  /* مودال التعليمات */
-  .modal {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 3000;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s ease;
-  }
-  .modal.active {
-    opacity: 1;
-    pointer-events: all;
-  }
-
-  .modal-content {
-    background: white;
-    border-radius: 15px;
-    max-width: 500px;
-    width: 90%;
-    padding: 25px 30px;
-    box-shadow: 0 12px 25px rgba(0,0,0,0.3);
-    text-align: center;
-    font-weight: 600;
-    color: var(--primary-color);
-    position: relative;
-    transform: translateY(20px);
-    transition: transform 0.3s ease;
-    max-height: 80vh;
-    overflow-y: auto;
-  }
-  .modal.active .modal-content {
-    transform: translateY(0);
-  }
-
-  .modal h2 {
-    margin-top: 0;
-    font-size: 1.5rem;
-    color: var(--primary-color);
-  }
-
-  .modal p {
-    margin: 15px 0;
-    line-height: 1.5;
-    text-align: right;
-  }
-
-  .modal ol {
-    text-align: right;
-    padding-right: 20px;
-    line-height: 1.8;
-  }
-
-  .modal button {
-    background: var(--secondary-color);
-    border: none;
-    color: white;
-    padding: 12px 28px;
-    border-radius: 30px;
-    font-weight: 700;
-    font-size: 1rem;
-    cursor: pointer;
-    box-shadow: 0 5px 15px rgba(25,118,210,0.4);
-    transition: background-color 0.3s ease;
-    margin-top: 15px;
-  }
-  .modal button:hover {
-    background: var(--primary-color);
-  }
-
-  /* زر إغلاق المودال */
-  .close-btn {
-    position: absolute;
-    top: 12px;
-    left: 15px;
-    background: transparent;
-    border: none;
-    font-size: 1.8rem;
-    color: var(--primary-color);
-    cursor: pointer;
-    font-weight: 700;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    transition: background-color 0.2s ease;
-  }
-  .close-btn:hover {
-    background: rgba(0,0,0,0.05);
-  }
-
-  /* تنبيه كيفية وضع الهاتف */
-  .toast {
-    position: fixed;
-    bottom: 110px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--secondary-color);
-    color: white;
-    padding: 12px 20px;
-    border-radius: 25px;
-    font-size: 0.9rem;
-    font-weight: 600;
-    box-shadow: var(--shadow);
-    max-width: 300px;
-    text-align: center;
-    user-select: none;
-    z-index: 2100;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
-  .toast.show {
-    opacity: 1;
-  }
-  .toast i {
-    font-size: 1.2rem;
-  }
-
-  /* مؤشر التحميل */
-  .loader {
-    display: inline-block;
-    width: 20px;
-    height: 20px;
-    border: 3px solid rgba(255,255,255,0.3);
-    border-radius: 50%;
-    border-top-color: white;
-    animation: spin 1s ease-in-out infinite;
-  }
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-</style>
+    .compass span {
+      position: absolute;
+      font-size: 14px;
+      font-weight: bold;
+    }
+    .compass .n { top: 4px; left: 50%; transform: translateX(-50%); }
+    .compass .s { bottom: 4px; left: 50%; transform: translateX(-50%); }
+    .compass .e { right: 4px; top: 50%; transform: translateY(-50%); }
+    .compass .w { left: 4px; top: 50%; transform: translateY(-50%); }
+  </style>
 </head>
 <body>
-<div id="app" class="dimmed">
-  <header>
-    <i class="fas fa-mosque"></i>
-    <span>القرآن حياة | تحديد اتجاه القبلة بدقة</span>
-  </header>
-  
-  <div id="compass">
-    <i class="fas fa-compass" style="color: var(--primary-color); font-size: 1.3rem;"></i>
-  </div>
-  
-  <div id="controls">
-    <button id="refreshBtn" title="تحديث الموقع واتجاه القبلة" disabled>
-      <span id="refreshIcon" class="loader"></span>
-      تحديث الاتجاه
-    </button>
-    <button id="helpBtn">
-      <i class="fas fa-question-circle"></i>
-      كيفية الاستخدام
-    </button>
-  </div>
-  
-  <div id="info">
-    <i class="fas fa-info-circle"></i>
-    <span>جارٍ تحميل الموقع والخرائط...</span>
-  </div>
-  
-  <div id="map"></div>
-</div>
 
-<!-- مودال التعليمات الأولية -->
-<div id="instructionsModal" class="modal active" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-  <div class="modal-content">
-    <button class="close-btn" aria-label="إغلاق">×</button>
-    <h2 id="modalTitle"><i class="fas fa-mosque"></i> تعليمات استخدام الموقع</h2>
-    <p>
-      مرحبًا بك في موقع "القرآن حياة" لتحديد اتجاه القبلة بدقة!
-    </p>
-    <ol>
-      <li>سيتم تحديد موقعك الجغرافي تلقائيًا لحساب اتجاه القبلة</li>
-      <li>السهم الأحمر يشير إلى اتجاه الكعبة المشرفة بالنسبة لموقعك الحالي</li>
-      <li>للاستخدام الأمثل، تأكد من تفعيل خدمة تحديد الموقع في جهازك</li>
-      <li>يمكنك تحديث الموقع يدويًا بالضغط على زر "تحديث الاتجاه"</li>
-      <li>لتحقيق أفضل دقة، استخدم التطبيق في مكان مفتوح بعيدًا عن التشويش</li>
-    </ol>
-    <p>
-      بالضغط على "أوافق"، أنت توافق على استخدام موقعك الجغرافي لتحديد اتجاه القبلة.
-    </p>
-    <button id="agreeBtn">
-      <i class="fas fa-check-circle"></i> أوافق
-    </button>
-  </div>
-</div>
-
-<!-- مودال مساعدة كيفية الاستخدام -->
-<div id="helpModal" class="modal" role="dialog" aria-modal="false" aria-labelledby="helpModalTitle">
-  <div class="modal-content">
-    <button class="close-btn" aria-label="إغلاق">×</button>
-    <h2 id="helpModalTitle"><i class="fas fa-question-circle"></i> كيفية استخدام التطبيق</h2>
-    <p>
-      إليك الخطوات الكاملة لاستخدام تطبيق تحديد اتجاه القبلة:
-    </p>
-    <ol>
-      <li>اترك التطبيق يحصل على موقعك الجغرافي تلقائيًا</li>
-      <li>انظر إلى السهم الأحمر في الأسفل، فهو يشير إلى اتجاه القبلة</li>
-      <li>قف في مكانك وقم بتدوير نفسك حتى يصبح السهم الأحمر متجهًا للأعلى</li>
-      <li>الآن أنت متجه نحو الكعبة المشرفة مباشرة</li>
-      <li>لتحسين الدقة، استخدم التطبيق في أماكن مفتوحة</li>
-      <li>يمكنك الضغط على "تحديث الاتجاه" إذا تغير موقعك</li>
-    </ol>
-    <p>
-      <i class="fas fa-lightbulb"></i> نصيحة: ضع هاتفك بشكل أفقي أمامك لرؤية أفضل لاتجاه السهم.
-    </p>
-    <button id="closeHelpBtn">
-      <i class="fas fa-times"></i> فهمت
-    </button>
-  </div>
-</div>
-
-<div id="bottom-arrow" title="اتجاه القبلة" aria-label="سهم اتجاه القبلة">
-  <svg viewBox="0 0 24 24" role="img" aria-hidden="true">
-    <path d="M12 2 L21 22 H3 L12 2 Z" />
-  </svg>
-</div>
-
-<div id="positionToast" class="toast" aria-live="polite" role="alert">
-  <i class="fas fa-mobile-alt"></i>
-  <span>ضع هاتفك مستقيماً أمامك لتحصل على أفضل قراءة للسهم</span>
+<div id="map"></div>
+<div id="distance">جاري تحديد الموقع...</div>
+<div class="compass">
+  <span class="n">N</span>
+  <span class="s">S</span>
+  <span class="e">E</span>
+  <span class="w">W</span>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
-
 <script>
-  // عناصر DOM
-  const infoEl = document.getElementById('info');
-  const refreshBtn = document.getElementById('refreshBtn');
-  const refreshIcon = document.getElementById('refreshIcon');
-  const bottomArrow = document.getElementById('bottom-arrow');
-  const app = document.getElementById('app');
-  const instructionsModal = document.getElementById('instructionsModal');
-  const helpModal = document.getElementById('helpModal');
-  const agreeBtn = document.getElementById('agreeBtn');
-  const closeHelpBtn = document.getElementById('closeHelpBtn');
-  const helpBtn = document.getElementById('helpBtn');
-  const closeBtns = document.querySelectorAll('.close-btn');
-  const positionToast = document.getElementById('positionToast');
+  const kaaba = { lat: 21.4225, lng: 39.8262 };
+  const map = L.map('map').setView([21.4, 39.8], 5);
 
-  let map, userMarker, qiblaMarker;
-  let currentQiblaAngle = 0;
-  let watchId = null;
-  let isFirstLoad = true;
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    attribution: '© OpenStreetMap'
+  }).addTo(map);
 
-  // حساب اتجاه القبلة
-  function calculateQibla(lat, lon) {
-    const kaabaLat = 21.4225;
-    const kaabaLon = 39.8262;
-    const rad = Math.PI / 180;
-    const dLon = (kaabaLon - lon) * rad;
-    const y = Math.sin(dLon) * Math.cos(kaabaLat * rad);
-    const x = Math.cos(lat * rad) * Math.sin(kaabaLat * rad) -
-              Math.sin(lat * rad) * Math.cos(kaabaLat * rad) * Math.cos(dLon);
-    let brng = Math.atan2(y, x);
-    brng = brng * (180 / Math.PI);
-    return (brng + 360) % 360;
+  const kaabaIcon = L.icon({
+    iconUrl: 'https://cdn-icons-png.flaticon.com/512/2933/2933186.png',
+    iconSize: [40, 40],
+    iconAnchor: [20, 20]
+  });
+
+  L.marker([kaaba.lat, kaaba.lng], { icon: kaabaIcon }).addTo(map).bindPopup('🕋 الكعبة المشرّفة');
+
+  function haversineDistance(lat1, lon1, lat2, lon2) {
+    const toRad = angle => angle * Math.PI / 180;
+    const R = 6371; // km
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
   }
 
-  // تهيئة الخريطة
-  function initMap(lat, lon) {
-    if (!map) {
-      map = L.map('map').setView([lat, lon], 16);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© OpenStreetMap'
-      }).addTo(map);
-    } else {
-      map.setView([lat, lon], 16);
-      if (userMarker) userMarker.setLatLng([lat, lon]);
-      if (qiblaMarker) map.removeLayer(qiblaMarker);
-    }
+  navigator.geolocation.getCurrentPosition(pos => {
+    const userLat = pos.coords.latitude;
+    const userLng = pos.coords.longitude;
 
-    // إضافة علامة للمستخدم
-    if (!userMarker) {
-      userMarker = L.marker([lat, lon], {
-        icon: L.divIcon({
-          html: '<i class="fas fa-map-marker-alt" style="font-size: 2rem; color: var(--primary-color);"></i>',
-          iconSize: [32, 32],
-          iconAnchor: [16, 32],
-          className: ''
-        })
-      }).addTo(map).bindPopup('📍 موقعك الحالي');
-    } else {
-      userMarker.setLatLng([lat, lon]);
-    }
+    // Marker لموقع المستخدم
+    const userMarker = L.marker([userLat, userLng]).addTo(map).bindPopup('📍 موقعك الحالي').openPopup();
 
-    // حساب اتجاه القبلة
-    currentQiblaAngle = calculateQibla(lat, lon);
-    
-    // إضافة سهم القبلة إلى الخريطة
-    const arrowIcon = L.divIcon({
-      html: `<div style="transform: rotate(${currentQiblaAngle}deg); width: 50px; height: 50px;">
-              <svg viewBox="0 0 24 24" fill="var(--accent-color)" stroke="#7f0000" stroke-width="2">
-                <path d="M12 2 L21 22 H3 L12 2 Z" />
-              </svg>
-            </div>`,
-      className: '',
-      iconSize: [50, 50],
-      iconAnchor: [25, 25]
-    });
-
-    qiblaMarker = L.marker([lat, lon], { 
-      icon: arrowIcon,
-      interactive: false
+    // خط إلى الكعبة
+    const qiblaLine = L.polyline([[userLat, userLng], [kaaba.lat, kaaba.lng]], {
+      color: 'red',
+      weight: 3
     }).addTo(map);
 
-    // تحديث واجهة المستخدم
-    infoEl.innerHTML = `<i class="fas fa-check-circle" style="color: green;"></i> تم تحديد موقعك واتجاه القبلة بدقة.`;
-    refreshBtn.disabled = false;
-    refreshIcon.className = 'fas fa-sync-alt';
-    
-    // تحديث السهم السفلي
-    updateBottomArrow(currentQiblaAngle);
-    
-    // إظهار تنبيه الوضع للمرة الأولى فقط
-    if (isFirstLoad) {
-      showToast();
-      isFirstLoad = false;
-    }
-  }
+    map.fitBounds(qiblaLine.getBounds(), { padding: [50, 50] });
 
-  // تحديث السهم السفلي
-  function updateBottomArrow(angle) {
-    bottomArrow.style.transform = `translateX(-50%) rotate(${angle}deg)`;
-  }
+    // حساب المسافة
+    const distance = haversineDistance(userLat, userLng, kaaba.lat, kaaba.lng).toFixed(2);
+    document.getElementById('distance').textContent = `📏 المسافة إلى الكعبة: ${distance} كم`;
 
-  // تحديد الموقع وتحديثه
-  function locateAndUpdate() {
-    infoEl.innerHTML = `<i class="fas fa-compass"></i> جارٍ تحديد موقعك...`;
-    refreshBtn.disabled = true;
-    refreshIcon.className = 'loader';
-
-    if (!navigator.geolocation) {
-      infoEl.innerHTML = `<i class="fas fa-exclamation-triangle"></i> المتصفح لا يدعم تحديد الموقع.`;
-      refreshBtn.disabled = false;
-      refreshIcon.className = 'fas fa-sync-alt';
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        initMap(pos.coords.latitude, pos.coords.longitude);
-      },
-      (err) => {
-        let errorMsg = 'حدث خطأ غير متوقع';
-        switch(err.code) {
-          case err.PERMISSION_DENIED:
-            errorMsg = 'تم رفض إذن الموقع. يرجى تفعيله في إعدادات المتصفح.';
-            break;
-          case err.POSITION_UNAVAILABLE:
-            errorMsg = 'معلومات الموقع غير متوفرة. تحقق من اتصال الإنترنت.';
-            break;
-          case err.TIMEOUT:
-            errorMsg = 'انتهى الوقت المحدد للحصول على الموقع.';
-            break;
-        }
-        infoEl.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${errorMsg}`;
-        refreshBtn.disabled = false;
-        refreshIcon.className = 'fas fa-sync-alt';
-      },
-      { 
-        enableHighAccuracy: true, 
-        timeout: 10000,
-        maximumAge: 0
-      }
-    );
-  }
-
-  // إظهار تنبيه مؤقت
-  function showToast() {
-    positionToast.classList.add('show');
-    setTimeout(() => {
-      positionToast.classList.remove('show');
-    }, 8000);
-  }
-
-  // فتح وإغلاق المودالات
-  function openModal(modal) {
-    modal.setAttribute('aria-modal', 'true');
-    modal.classList.add('active');
-    app.classList.add('dimmed');
-  }
-
-  function closeModal(modal) {
-    modal.setAttribute('aria-modal', 'false');
-    modal.classList.remove('active');
-    app.classList.remove('dimmed');
-  }
-
-  // أحداث DOM
-  refreshBtn.addEventListener('click', locateAndUpdate);
-  
-  helpBtn.addEventListener('click', () => {
-    openModal(helpModal);
-  });
-
-  closeHelpBtn.addEventListener('click', () => {
-    closeModal(helpModal);
-  });
-
-  agreeBtn.addEventListener('click', () => {
-    closeModal(instructionsModal);
-    localStorage.setItem('qiblaInstructionsAccepted', 'true');
-    locateAndUpdate();
-    
-    // بدء مراقبة الموقع للتحديثات
-    if (watchId === null) {
-      watchId = navigator.geolocation.watchPosition(
-        (pos) => {
-          initMap(pos.coords.latitude, pos.coords.longitude);
-        },
-        (err) => {
-          console.error('Error watching position:', err);
-        },
-        { 
-          enableHighAccuracy: true, 
-          maximumAge: 30000,
-          timeout: 10000
-        }
-      );
-    }
-  });
-
-  closeBtns.forEach(btn => {
-    btn.addEventListener('click', function() {
-      const modal = this.closest('.modal');
-      closeModal(modal);
-    });
-  });
-
-  // عند تحميل الصفحة
-  document.addEventListener('DOMContentLoaded', () => {
-    const accepted = localStorage.getItem('qiblaInstructionsAccepted');
-    if (accepted === 'true') {
-      instructionsModal.classList.remove('active');
-      app.classList.remove('dimmed');
-      locateAndUpdate();
-      
-      // بدء مراقبة الموقع للتحديثات
-      if (watchId === null) {
-        watchId = navigator.geolocation.watchPosition(
-          (pos) => {
-            initMap(pos.coords.latitude, pos.coords.longitude);
-          },
-          (err) => {
-            console.error('Error watching position:', err);
-          },
-          { 
-            enableHighAccuracy: true, 
-            maximumAge: 30000,
-            timeout: 10000
-          }
-        );
-      }
-    } else {
-      openModal(instructionsModal);
-    }
-  });
-
-  // إغلاق المودال عند النقر خارج المحتوى
-  window.addEventListener('click', (e) => {
-    if (e.target.classList.contains('modal')) {
-      closeModal(e.target);
-    }
+  }, err => {
+    document.getElementById('distance').textContent = '❌ لم يتم تحديد الموقع.';
+    console.error(err);
+  }, {
+    enableHighAccuracy: true,
+    timeout: 10000
   });
 </script>
+
 </body>
 </html>
