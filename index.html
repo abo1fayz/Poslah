@@ -261,7 +261,7 @@
   <button id="refreshBtn" title="تحديث الموقع واتجاه القبلة" disabled>↻ تحديث الاتجاه</button>
   
   <div id="directionNote" aria-live="polite">
-    ⚠️ سهم الخريطة يشير لاتجاه القبلة بالنسبة للخريطة (الشمال الحقيقي)، وليس لاتجاه دوران جهازك.
+    ⚠️ السهم يشير إلى اتجاه القبلة بناءً على اتجاه جهازك. قم بتدوير هاتفك لرؤية اتجاه القبلة الصحيح.
     <button id="dismissNote" aria-label="إخفاء التنبيه">× إخفاء</button>
   </div>
   
@@ -275,8 +275,8 @@
     <h2 id="modalTitle">تعليمات استخدام الموقع</h2>
     <p>
       مرحبًا بك في موقع "القرآن حياة"!<br />
-      لكي تتمكن من معرفة اتجاه القبلة بدقة، نحتاج إلى إذنك للوصول إلى موقعك الجغرافي.<br />
-      الرجاء الضغط على زر "أوافق" للموافقة على تحديد موقعك.<br />
+      لكي تتمكن من معرفة اتجاه القبلة بدقة، نحتاج إلى إذنك للوصول إلى موقعك الجغرافي ومستشعر الجهاز.<br />
+      الرجاء الضغط على زر "أوافق" للموافقة على تحديد موقعك واستخدام مستشعر الجهاز.<br />
       يمكنك تحديث الموقع في أي وقت بالضغط على زر "تحديث الاتجاه".
     </p>
     <button id="agreeBtn">أوافق</button>
@@ -311,6 +311,7 @@
   let currentQiblaAngle = 0;
   let watchId = null;
   let deviceOrientationAvailable = false;
+  let lastHeading = 0;
 
   function calculateQibla(lat, lon) {
     const kaabaLat = 21.4225;
@@ -346,35 +347,62 @@
 
     currentQiblaAngle = calculateQibla(lat, lon);
 
-    const arrowIcon = L.divIcon({
-      html: `<div class="qibla-arrow" style="
-        transform: rotate(${currentQiblaAngle}deg);
-        width: 70px; height: 70px;
-        margin-left: -35px;
-        margin-top: -35px;
-        ">
-        <svg viewBox="0 0 24 24" fill="#b71c1c" stroke="#7f0000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" >
-          <path d="M12 2 L21 22 H3 L12 2 Z" />
-          <line x1="12" y1="6" x2="12" y2="17" stroke="#fff" stroke-width="3" />
-        </svg>
-        </div>`,
-      className: '',
-      iconSize: [70, 70],
-      iconAnchor: [35, 35],
-    });
-
-    qiblaMarker = L.marker([lat, lon], { icon: arrowIcon }).addTo(map).bindPopup('🕋 اتجاه القبلة');
-
+    // إزالة سهم القبلة من الخريطة لأنه لن يعتمد على الشمال الحقيقي
     infoEl.textContent = '✅ تم تحديد موقعك واتجاه القبلة بدقة.';
     refreshBtn.disabled = false;
 
-    if (!deviceOrientationAvailable) {
-      updateBottomArrow(currentQiblaAngle);
-    }
+    // تحديث السهم السفلي مباشرة
+    updateBottomArrow(currentQiblaAngle);
   }
 
   function updateBottomArrow(angle) {
     bottomArrow.style.transform = `translateX(-50%) rotate(${angle}deg)`;
+  }
+
+  function handleOrientation(event) {
+    if (event.absolute === true || event.absolute === undefined) {
+      let heading = event.alpha;
+      if (typeof heading === 'number') {
+        lastHeading = heading;
+        const relativeAngle = (360 - heading + currentQiblaAngle) % 360;
+        updateBottomArrow(relativeAngle);
+      }
+    }
+  }
+
+  function setupDeviceOrientation() {
+    if (!window.DeviceOrientationEvent) {
+      console.log("جهازك لا يدعم مستشعر البوصلة.");
+      deviceOrientationAvailable = false;
+      positionTip.textContent = "⚠️ جهازك لا يدعم مستشعر البوصلة. سيتم عرض اتجاه القبلة الثابت.";
+      return;
+    }
+
+    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+      // iOS 13+ يحتاج إلى طلب إذن
+      DeviceOrientationEvent.requestPermission()
+        .then(permissionState => {
+          if (permissionState === 'granted') {
+            deviceOrientationAvailable = true;
+            window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+            window.addEventListener('deviceorientation', handleOrientation, true);
+            positionTip.textContent = "👐 ضع هاتفك مستقيماً أمامك مع مستوى أفقي لتحصل على أفضل قراءة للسهم";
+          } else {
+            deviceOrientationAvailable = false;
+            positionTip.textContent = "⚠️ لم يتم منح الإذن لاستخدام مستشعر الجهاز. سيتم عرض اتجاه القبلة الثابت.";
+          }
+        })
+        .catch(() => {
+          deviceOrientationAvailable = false;
+          positionTip.textContent = "⚠️ تعذر الوصول إلى مستشعر الجهاز. سيتم عرض اتجاه القبلة الثابت.";
+        });
+    } else {
+      // أجهزة أندرويد وغيرها لا تحتاج إلى طلب إذن
+      deviceOrientationAvailable = true;
+      window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+      window.addEventListener('deviceorientation', handleOrientation, true);
+      positionTip.textContent = "👐 ضع هاتفك مستقيماً أمامك مع مستوى أفقي لتحصل على أفضل قراءة للسهم";
+    }
   }
 
   function locateAndUpdate() {
@@ -389,6 +417,9 @@
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         initMap(pos.coords.latitude, pos.coords.longitude);
+        if (!deviceOrientationAvailable) {
+          setupDeviceOrientation();
+        }
       },
       (err) => {
         infoEl.textContent = `❌ تعذر الحصول على الموقع: ${err.message}`;
@@ -396,43 +427,6 @@
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );
-  }
-
-  function setupDeviceOrientation() {
-    if (!window.DeviceOrientationEvent) {
-      console.log("جهازك لا يدعم مستشعر البوصلة.");
-      deviceOrientationAvailable = false;
-      return;
-    }
-
-    function handleOrientation(event) {
-      if (event.absolute === true || event.absolute === undefined) {
-        let heading = event.alpha;
-        if (typeof heading === 'number') {
-          deviceOrientationAvailable = true;
-          const relativeAngle = currentQiblaAngle - heading;
-          updateBottomArrow(relativeAngle);
-        }
-      }
-    }
-
-    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-      DeviceOrientationEvent.requestPermission()
-        .then(permissionState => {
-          if (permissionState === 'granted') {
-            window.addEventListener('deviceorientationabsolute', handleOrientation, true);
-            window.addEventListener('deviceorientation', handleOrientation, true);
-          } else {
-            deviceOrientationAvailable = false;
-          }
-        })
-        .catch(() => {
-          deviceOrientationAvailable = false;
-        });
-    } else {
-      window.addEventListener('deviceorientationabsolute', handleOrientation, true);
-      window.addEventListener('deviceorientation', handleOrientation, true);
-    }
   }
 
   refreshBtn.addEventListener('click', locateAndUpdate);
@@ -457,7 +451,11 @@
       watchId = navigator.geolocation.watchPosition(
         (pos) => {
           initMap(pos.coords.latitude, pos.coords.longitude);
-        },
+        if (!deviceOrientationAvailable) {
+          setupDeviceOrientation();
+        }
+        updateBottomArrow(currentQiblaAngle);
+      },
         (err) => {
           infoEl.textContent = `❌ تعذر تحديث الموقع: ${err.message}`;
         },
@@ -477,6 +475,10 @@
       watchId = navigator.geolocation.watchPosition(
         (pos) => {
           initMap(pos.coords.latitude, pos.coords.longitude);
+          if (!deviceOrientationAvailable) {
+            setupDeviceOrientation();
+          }
+          updateBottomArrow(currentQiblaAngle);
         },
         (err) => {
           infoEl.textContent = `❌ تعذر تحديث الموقع: ${err.message}`;
@@ -498,6 +500,10 @@
         watchId = navigator.geolocation.watchPosition(
           (pos) => {
             initMap(pos.coords.latitude, pos.coords.longitude);
+            if (!deviceOrientationAvailable) {
+              setupDeviceOrientation();
+            }
+            updateBottomArrow(currentQiblaAngle);
           },
           (err) => {
             infoEl.textContent = `❌ تعذر تحديث الموقع: ${err.message}`;
